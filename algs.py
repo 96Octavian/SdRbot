@@ -42,7 +42,7 @@ def e_info() -> str:
 
 def e_alg(a: int, b: int) -> int:
     while True:
-        q, r = divmod(a, b)
+        _, r = divmod(a, b)
         if r == 0:
             break
         a = b
@@ -88,10 +88,10 @@ def prime_factors_info() -> str:
     return text
 
 
-def prime_factors_alg(n: int) -> Generator[int]:
-    while n % 2 == 0:
+def prime_factors_alg(n: int) -> Generator[int, None, None]:
+    while not n & 1:
         yield 2
-        n /= 2
+        n = n >> 1
     f = 3
     while f * f <= n:
         if n % f == 0:
@@ -107,12 +107,12 @@ def prime_factors_powered_info() -> str:
     return text
 
 
-def prime_factors_powered_alg(num: int) -> Generator[int]:
+def prime_factors_powered_alg(num: int) -> Generator[int, None, None]:
     f = 1
     n: int = num
-    while n % 2 == 0:
-        f *= 2
-        n //= 2
+    while not n & 1:
+        f = f << 1
+        n = n >> 1
 
     if n != num:
         yield f
@@ -215,7 +215,7 @@ def coprimes_info() -> str:
     return text
 
 
-def coprimes_alg(n: int) -> Generator[int]:
+def coprimes_alg(n: int) -> Generator[int, None, None]:
     for k in range(1, n + 1):
         if gcd(n, k) == 1:
             yield k
@@ -265,15 +265,14 @@ def mr_info() -> str:
 
 def mr(n: int, k: int, a: int = None) -> bool:
     m: int = n - 1
-    while m % 2 == 0:
-        m /= 2
-    m = int(m)
+    while not m & 1:
+        m = m >> 1
     if not a:
         a = random.randint(2, n - 2)
     b = pow(a, m, n)
     if b == 1 or b == n - 1:
         return True
-    for i in reversed(range(1, k)):
+    for _ in reversed(range(1, k)):
         b = (b ** 2) % n
         if b == 1:
             return False
