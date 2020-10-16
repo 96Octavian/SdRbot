@@ -3,8 +3,6 @@ from math import gcd, sqrt, floor
 from typing import Generator
 
 
-# TODO: Guarda come funzionano i generatori e il loro type hint
-
 def ee_info() -> str:
     text = "Find x and y such that ax + by = gcd(a, b)"
     return text
@@ -68,7 +66,7 @@ def sm_alg(num: int, ex: int, p: int):
 
 
 def is_generator_info() -> str:
-    text = ("a generator of Z*p\n"
+    text = ("Check if a is generator of Z*p\n"
             "For each prime factor of p - 1, a^(p-1/q_i) != 1 mod p"
             )
     return text
@@ -99,7 +97,8 @@ def prime_factors_alg(n: int) -> Generator[int, None, None]:
             n //= f
         else:
             f += 2
-    if n != 1: yield n
+    if n != 1:
+        yield n
 
 
 def prime_factors_powered_info() -> str:
@@ -172,7 +171,7 @@ def verify_rsa_alg(p: int, q: int, exp: int) -> (bool, str):
     return response, answer
 
 
-def verify_g_info() -> str:
+def verify_gamal_info() -> str:
     text = ("Verify:\n"
             "p prime\n"
             "1 < a < p - 2\n"
@@ -182,7 +181,7 @@ def verify_g_info() -> str:
     return text
 
 
-def verify_g_alg(p: int, a: int, alpha: int, k: int = None) -> (bool, str):
+def verify_gamal_alg(p: int, a: int, alpha: int, k: int = None) -> (bool, str):
     answer: str = ""
     response: bool = True
     p_factors = prime_factors_alg(p)
@@ -223,7 +222,7 @@ def coprimes_alg(n: int) -> Generator[int, None, None]:
 
 def phi_info() -> str:
     text = ("Returns how many numbers up to n are relative primes to n\n"
-            "phi(n) = produttoria(factor(n) - 1)\n"
+            "phi(n) = product(factor(n) - 1)\n"
             )
     return text
 
@@ -249,32 +248,106 @@ def lambda_alg(num) -> int:
     return mcm
 
 
-def lcm(a, b):
+def lcm(a: int, b: int) -> int:
     return abs(a * b) // gcd(a, b)
 
 
 def mr_info() -> str:
-    text = ("/mr n k [a]\n"
-            "Test if n is prime\n"
-            "Write n-1 as 2^r * m, then calculate b = a^m mod n: if = +-1 it may be prime\n"
-            "Else, calculate b^2 mod n: if = 1 it's composite and gcd(b-1,n) is a factor, "
-            "if -1 it may be prime, else continue\n"
-            "Repeat k times")
+    text = ("Test if n is prime using Miller-Rabin method\n")
     return text
 
 
-def mr(n: int, k: int, a: int = None) -> bool:
-    m: int = n - 1
-    while not m & 1:
-        m = m >> 1
-    if not a:
-        a = random.randint(2, n - 2)
-    b = pow(a, m, n)
-    if b == 1 or b == n - 1:
+def mr(number: int, rounds: int = 40) -> bool:
+    """Miller-Rabin primality test
+
+    Test if number could be prime using the Miller-Rabin Primality Test with rounds rounds.
+    A return value of false means number is definitely composite, while true means it is probably prime.
+    The higher rounds is, the more accurate the test is.
+    :param int number: The number to be tested for primality.
+    :param int rounds: How many rounds to use in the test.
+    :return: A bool indicating if the number could be prime or not.
+    :rtype: bool
+
+    """
+    # Handle corner cases
+    if number == 1:
+        return False
+    if number == 2:
         return True
-    for _ in reversed(range(1, k)):
-        b = (b ** 2) % n
-        if b == 1:
-            return False
-        if b == n - 1:
-            return True
+    if number == 3:
+        return True
+
+    # Factor out the powers of 2 from {number - 1} and save the result
+    d: int = number - 1
+    r: int = 0
+    while not d & 1:
+        d = d >> 1
+        r += 1
+
+    # Cycle at most {round} times
+    for _ in range(rounds + 1):
+        a: int = random.randint(2, number - 2)
+        x: int = pow(a, d, number)
+        if x == 1 or x == number - 1:
+            continue
+        # Cycle at most {r - 1} times
+        for _ in range(r):
+            x = x * x % number
+            if x == number - 1:
+                break
+        if x == number - 1:
+            continue
+        return False
+    return True
+
+
+def verify_bbs_info() -> str:
+    text = ("p = q = 3 mod 4\n"
+            "n = p * q\n"
+            "gcd(seed, n) = 1\n"
+            )
+    return text
+
+
+def verify_bbs_alg(p: int, q: int, seed: int) -> (bool, str):
+    valid: bool = True
+
+    mod_three: bool = p % 4 == 3
+    valid &= mod_three
+    text = f'p is{"" if mod_three else " not"} 3 mod 4\n'
+
+    mod_three: bool = q % 4 == 3
+    valid &= mod_three
+    text += f'q is{"" if mod_three else " not"} 3 mod 4\n'
+
+    n: int = q * p
+    valid &= gcd(n, seed) == 1
+    text += f'seed is{"" if valid else " not"} relative prime with n = p * q = {n}\n'
+
+    return valid, text
+
+
+def bbs_info() -> str:
+    text = ("Blum-Blum-Shub pseudo random bit generator\n"
+            "LSB is the randomly generated bit. Every x is the square of the preceding\n"
+            "The period is one of the factors of lambda(lambda(n))\n"
+            )
+    return text
+
+
+def bbs(p: int, q: int, seed: int) -> Generator[int, None, int]:
+    n: int = q * p
+    seed = pow(seed, 2, n)
+    x: int = seed
+    index = 0
+
+    x = pow(x, 2, n)
+    yield divmod(x, 2)[1]
+    index += 1
+
+    while x != seed:
+        x = pow(x, 2, n)
+        yield divmod(x, 2)[1]
+        index += 1
+
+    return index
