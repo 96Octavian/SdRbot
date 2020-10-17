@@ -1,7 +1,9 @@
 import random
 from math import gcd, sqrt, floor
-from typing import Generator
+from typing import Generator, Dict
 
+
+# TODO: Verify all conditions
 
 def ee_info() -> str:
     text = "Find x and y such that ax + by = gcd(a, b)"
@@ -30,7 +32,7 @@ def ee_alg(a: int, b: int) -> (int, int):
         a = b
         b = r
 
-    return x, y
+    return x0, y0
 
 
 def e_info() -> str:
@@ -351,3 +353,55 @@ def bbs(p: int, q: int, seed: int) -> Generator[int, None, int]:
         index += 1
 
     return index
+
+
+# TODO: this sucks
+def pollard_alg(n: int, a: int) -> (bool, int):
+    d: int = 1
+    b: int = a
+    while d == 1:
+        a = (a * a + 1) % n
+        b = (b * b + 1) % n
+        b = (b * b + 1) % n
+        d = gcd(abs(a-b), n)
+
+    return d != n, d
+
+
+def pollard_info() -> str:
+    text = ("Computes a non trivial factor of n\n"
+            "Starting from b1 = a mod n, calculate b_j = b_(j-1) ** j mod n until j equals the limit. "
+            "Now, if d = gcd(b - 1, n) is differente from 1, you have a non trivial factor of n\n"
+            "/pollard n a limit\n")
+    return text
+
+
+def bsgs_info() -> str:
+    text = ("a^x= b (mod p)\n"
+            "Choose N so that N^2 >= p - 1\n"
+            "list: a^j (mod p) for j in 0..N\n"
+            "list: ba^(-Nk) for k in 0..N\n"
+            "When an elem in second list is in first, x = j + Nk")
+    return text
+
+
+def bsgs_alg(base, target, mod, N=None) -> int:
+    if not N:
+        N = floor(sqrt(mod)) + 1
+    baby: Dict[int, int] = {}
+    val: int = 1
+    baby[1] = 0
+    for j in range(1, N):
+        val = pow(base, j, mod)
+        baby[val] = j
+
+    _, a_inv = ee_alg(base, mod)
+
+    a_inv_N = pow(a_inv, N, mod)
+
+    val = target
+    for k in range(0, N):
+        print(f'{k}: {val}')
+        if val in baby:
+            return baby[val] + N * k
+        val = val * a_inv_N % mod
